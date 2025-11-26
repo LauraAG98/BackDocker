@@ -17,7 +17,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-
 /**
  * Configuración principal de Spring Security.
  * Define qué rutas están protegidas y cómo.
@@ -33,30 +32,32 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-        		.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                // Deshabilitamos CSRF (Cross-Site Request Forgery) porque usamos JWT (stateless)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                // Deshabilitamos CSRF (Cross-Site Request Forgery) porque usamos JWT
+                // (stateless)
                 .csrf(csrf -> csrf.disable())
 
                 // Definimos las reglas de autorización
                 .authorizeHttpRequests(authz -> authz
                         // Endpoints públicos (registro y login)
                         .requestMatchers("/api/auth/**").permitAll()
-                        
+
                         // Endpoints de productos:
                         // Solo ADMIN puede crear productos (POST)
-                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/products").hasAuthority(com.example.adso.model.Role.ADMIN.name())
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/products")
+                        .hasAuthority(com.example.adso.model.Role.ADMIN.name())
                         // USER y ADMIN pueden ver productos (GET)
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products").hasAnyAuthority(com.example.adso.model.Role.ADMIN.name(), com.example.adso.model.Role.USER.name())
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products")
+                        .hasAnyAuthority(com.example.adso.model.Role.ADMIN.name(),
+                                com.example.adso.model.Role.USER.name())
 
                         // Todas las demás peticiones deben estar autenticadas
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
 
                 // Configuramos la gestión de sesiones como STATELESS (sin estado)
                 // Spring Security no creará ni usará sesiones HTTP.
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 // Definimos el proveedor de autenticación
                 .authenticationProvider(authenticationProvider)
@@ -66,25 +67,24 @@ public class SecurityConfig {
 
         return http.build();
     }
-    
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        
-        // Permitir el origen de Angular (ajusta el puerto si es necesario)
-        configuration.setAllowedOrigins(List.of("https://practica-frontend-pi.vercel.app/products")); 
-        
-        // Permitir los métodos HTTP que usas (GET, POST, etc.)
+
+        // 1. CORREGIR EL ORIGEN: Debe ser solo el dominio del frontend.
+        configuration.setAllowedOrigins(List.of("https://practica-frontend-pi.vercel.app"));
+
+        // 2. Permitir los métodos
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        
-        // Permitir las cabeceras, especialmente Authorization para el token JWT
+
+        // 3. Permitir las cabeceras (esencial para JWT)
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-        
-        // Permitir credenciales si fuera necesario (opcional en JWT stateless, pero útil a veces)
+
+        // Permitir credenciales si fuera necesario
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        // Aplicar esta configuración a todas las rutas
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
