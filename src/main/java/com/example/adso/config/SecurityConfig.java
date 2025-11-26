@@ -41,6 +41,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         // Endpoints públicos (registro y login)
                         .requestMatchers("/api/auth/**").permitAll()
+                        
+                        // Adaptación #1: Permitir acceso a la ruta raíz (/) para que Render verifique la salud del servicio.
+                        .requestMatchers("/").permitAll() 
 
                         // Endpoints de productos:
                         // Solo ADMIN puede crear productos (POST)
@@ -72,7 +75,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 1. CORREGIR EL ORIGEN: Debe ser solo el dominio del frontend.
+        // Adaptación #2: El origen debe ser solo el dominio del frontend, sin la ruta (/products).
         configuration.setAllowedOrigins(List.of("https://practica-frontend-pi.vercel.app"));
 
         // 2. Permitir los métodos
